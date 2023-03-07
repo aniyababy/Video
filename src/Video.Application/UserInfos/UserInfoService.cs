@@ -37,6 +37,7 @@ namespace Video.Application.UserInfos
         public async Task<UserInfoRoleDto> LoginAsync(LoginInput input)
         {
             var data = await _userInfoRepository.GetUserInfoRoleViewAsync(input.UserName, input.Password);
+            if(data == null) { throw new BusinessException("账号或密码错误"); };
             var dto = _mapper.Map<UserInfoRoleDto>(data);
             return dto;
         }

@@ -20,27 +20,33 @@ namespace Video.EntityFrameworkCore.Users
 
         public async Task<UserInfoRoleView?> GetUserInfoRoleViewAsync(string username, string password)
         {
-            UserInfoRoleView? userInfo = await _dbContext.UserInfo.Where(x => x.Username == username && x.Password == password).Select(x => new UserInfoRoleView()
-            {
-                Username = x.Username,
-                Password = x.Password,
-                Avatar = x.Avatar,
-                CreateTime = x.CreateTime,
-                Enable = x.Enable,
-                Id = x.Id,
-                Name = x.Name
-            }).FirstOrDefaultAsync();
-            if(userInfo == null)
+            var userInfo = await _dbContext.UserInfo.Where(x => x.Username == username && x.Password == password)
+                .Select(x => new UserInfoRoleView()
+                {
+                    Avatar = x.Avatar,
+                    CreateTime = x.CreateTime,
+                    Enable = x.Enable,
+                    Id = x.Id,
+                    Name = x.Name,
+                    Password = x.Password,
+                    Username = x.Username
+                })
+                .FirstOrDefaultAsync();
+
+            if (userInfo == null)
             {
                 return null;
             }
-            ///获取当前用户的所有角色 
+
+            // 获取当用户的所有角色
             var query =
                 from role in _dbContext.Role
-                join UserRole in _dbContext.userRole on role.Id equals UserRole.Id
-                where UserRole.UserId == userInfo.Id
+                join userRole in _dbContext.userRole on role.Id equals userRole.RoleId
+                where userRole.UserId == userInfo.Id
                 select role;
+
             userInfo.Role = await query.ToListAsync();
+
             return userInfo;
         }
 
@@ -93,7 +99,7 @@ namespace Video.EntityFrameworkCore.Users
 
         public async Task DeleteAsync(IEnumerable<Guid> ids)
         {
-            await _dbContext.Database.ExecuteSqlRawAsync("DELETE FROM UserInfo WHERE Id IN {0}", string.Join(',', ids));
+            await _dbContext.Database.ExecuteSqlInterpolatedAsync($"DELETE FROM UserInfo WHERE Id IN ({string.Join(',', ids)})");
         }
 
         public async Task EnableAsync(IEnumerable<Guid> ids,bool enable = true)
